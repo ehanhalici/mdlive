@@ -1,5 +1,4 @@
-#ifndef HIGHLIGHTER
-#define HIGHLIGHTER
+#pragma once
 
 bool is_hr(char *text, int lineLen, char *style);
 bool is_list(char *text, int lineLen, char *style);
@@ -33,4 +32,4 @@ int scan_embed_wikilink(char* text, int maxLen, char* style, bool isCurrentLine)
 int scan_block_id(char* text, int maxLen, char* style);
 int scan_bare_url(char *text, int maxLen, char *style);
 int scan_tag_advanced(char* text, int maxLen, char* style);
-#endif
+

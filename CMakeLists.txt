@@ -31,9 +31,15 @@ include_directories(
 
 # --- 3. Executable ---
 set(PROJECT_SRC
-  src/main.cpp
-  src/Highlighter.cpp
+    src/Callback.cpp
+    src/Editor.cpp
+    src/FileSystem.cpp
+    src/Highlighter.cpp
+    src/main.cpp
+    src/Ui.cpp
+    src/Parser.cpp
 
+  
 )
 add_executable(mdlive ${PROJECT_SRC})
 
