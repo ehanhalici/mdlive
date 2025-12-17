@@ -1,17 +1,15 @@
 #include "Editor.hpp"
 
 #include <cstddef>
-#include <iostream>
-#include <fstream>
-#include <memory_resource>
 #include <string>
 #include <vector>
-#include <filesystem>
 #include <cstring>
+#include <sstream> // Bunu eklemelisin
 
 #include "App.hpp"
 #include "Callback.hpp"
 #include "Parser.hpp"
+#include "Utf8.hpp"
 
 // Bir satırın tablo parçası olup olmadığını kontrol et
 bool IsTableLine(const char* text) {
@@ -20,18 +18,6 @@ bool IsTableLine(const char* text) {
     return (*text == '|');
 }
 
-
-size_t utf8_width(const std::string& str) {
-    size_t len = 0;
-    for (size_t i = 0; i < str.length(); ++i) {
-        // UTF-8'de devam baytları 10xxxxxx formatındadır (0x80 ile 0xBF arası)
-        // Bunları saymayarak sadece karakter başlangıçlarını sayıyoruz.
-        if ((str[i] & 0xC0) != 0x80) {
-            len++;
-        }
-    }
-    return len;
-}
 
 
 // Tablonun başlangıç ve bitiş satırlarını bul
@@ -137,9 +123,6 @@ void FormatTableAt(int pos) {
     }
     free(rawTable);
 
-    // --- DEĞİŞİKLİK BURADA: Genişlik Hesaplama ---
-    
-
     // 2. Tabloyu Yeniden Oluştur (Reconstruct)
     std::string newTable;
     for (size_t r = 0; r < rows.size(); r++) {
@@ -149,9 +132,6 @@ void FormatTableAt(int pos) {
                 newTable += std::string(colWidths[c] + 2, '-'); 
             } else {
                 newTable += " " + rows[r][c];
-                
-                // --- DEĞİŞİKLİK BURADA: Padding Hesabı ---
-                // UTF-8 genişliğine göre boşluk ekle
                 size_t currentLen = utf8_width(rows[r][c]);
                 if (colWidths[c] > currentLen) {
                     newTable += std::string(colWidths[c] - currentLen, ' ');
@@ -162,7 +142,7 @@ void FormatTableAt(int pos) {
         }
         newTable += "\n";
     }
-// Son \n'i sil (editörde fazladan satır açmasın)
+
     if (!newTable.empty()) newTable.pop_back();
 
     // 3. Buffer'ı Güncelle
@@ -264,7 +244,7 @@ int SmartEditor::handle(int event) {
         }
     }
 
-    // --- İMLEÇ HAREKETİ TETİKLEYİCİSİ (Eski Kod) ---
+    // --- İMLEÇ HAREKETİ TETİKLEYİCİSİ ---
     int old_pos = insert_position();
     int result = Fl_Text_Editor::handle(event);
     int new_pos = insert_position();

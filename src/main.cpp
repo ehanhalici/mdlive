@@ -25,7 +25,6 @@
 
 
 int main(int argc, char** argv) {
-    // 1. ÖNCE GENEL TEMAYI YÜKLE
     init_ui(argc, argv);
     try {
         PopulateFileTree(app.currentRoot);

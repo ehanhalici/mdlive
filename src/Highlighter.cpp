@@ -3,8 +3,7 @@
 
 #include <cstring>
 #include <cctype>
-
-// --- YARDIMCI KONTROLLER ---
+#include "Highlighter.hpp"
 
 // Yatay Çizgi (--- veya ***)
 bool is_hr(char *text, int lineLen, char *style) {
@@ -49,9 +48,9 @@ bool codeBlog(char* text, int lineLen, char* style) {
     if (text == NULL) { inCodeBlock = false; return false; }
     
     // ``` kontrolü (Başlangıç veya Bitiş)
-    if (lineLen >= 3 && text[0] == '`' && text[1] == '`' && text[2] == '`') {
+    if (lineLen >= 3 && startsWith(text, lineLen, "```")) {
         inCodeBlock = !inCodeBlock;
-        memset(style, 'C', lineLen);
+        memset(style, 'H', lineLen);
         return true;
     }
 
@@ -62,21 +61,96 @@ bool codeBlog(char* text, int lineLen, char* style) {
     return false;
 }
 
-// Başlık (# Header) - # işaretlerini gizler ('G'), metni büyütür ('B')
-bool header(char *text, int lineLen, char *style) {
+bool yaml(char* text, int lineLen, char* style) {
+    static bool inYaml = false;
+
+    if (text == NULL){inYaml = false; return false;}
+    if (lineLen >= 3 && startsWith(text, lineLen, "---")) {
+        inYaml = !inYaml;
+        memset(style, 'P', lineLen);
+        return true;
+    }
+
+    if (inYaml) {
+        memset(style, 'C', lineLen);
+        return true;
+    }
+    return false;
+
+    
+}
+
+bool header(char *text, int lineLen, char *style, bool isCurrentLine) {
     if (lineLen > 0 && text[0] == '#') {
         int hashCount = 0;
         while (hashCount < lineLen && text[hashCount] == '#') hashCount++;
         
         if (hashCount < lineLen && text[hashCount] == ' ') {
-            memset(style, 'G', hashCount); // #'leri gizle
-            memset(style + hashCount, 'B', lineLen - hashCount); // Metni başlık yap
+            if (isCurrentLine) {
+                memset(style, 'H', hashCount);
+                memset(style + hashCount, 'B', lineLen - hashCount);
+            } else {
+                memset(style, 'G', hashCount);
+                memset(style + hashCount, 'B', lineLen - hashCount);
+            }
             return true;
+          }
+    }
+    return false;
+}
+
+bool horizontal(char *text, int lineLen, char *style, bool isCurrentLine) {
+    //  (--- veya ***)
+    if (lineLen >= 3) {
+        bool isHR = true;
+        char c = text[0];
+        if (c == '-' || c == '*') {
+            for(int z=0; z<lineLen; z++) if(text[z] != c && text[z] != ' ') isHR = false;
+            if (isHR) {
+                if (isCurrentLine) memset(style, 'H', lineLen);
+                else memset(style, 'G', lineLen); 
+                return true;
+            }
         }
     }
     return false;
 }
 
+int taskList(char *text, int lineLen, char *style, bool isCurrentLine){
+    // Task List (- [ ] veya - [x])
+    int tOffset = 0;
+    while(tOffset < lineLen && text[tOffset] == ' ') tOffset++;
+    bool isTask = false;
+
+    if (lineLen - tOffset >= 5 && 
+        (text[tOffset] == '-' || text[tOffset] == '*') && 
+        text[tOffset+1] == ' ' && text[tOffset+2] == '[') {
+            
+        if (text[tOffset+4] == ']') {
+            isTask = true; // Task olduğunu işaretle
+            char checkChar = text[tOffset+3];
+            int afterBracket = tOffset + 5;
+            bool isChecked = (checkChar == 'x' || checkChar == 'X');
+
+            if (isCurrentLine) {
+                memset(style, 'H', afterBracket);
+                if (isChecked) style[tOffset+3] = 'X'; 
+            } else {
+                memset(style, 'G', tOffset + 2); 
+                if (isChecked) {
+                    memset(style + tOffset + 2, 'X', 3); 
+                    memset(style + afterBracket, 'Z', lineLen - afterBracket); 
+                } else {
+                    memset(style + tOffset + 2, 'L', 3); 
+                }
+            }
+        }
+    }
+
+    if (isTask) return tOffset;
+    return 0;
+
+}
 // Alıntı (> Quote)
 bool quote(char *text, int lineLen, char *style) {
     if (lineLen > 0 && text[0] == '>') {

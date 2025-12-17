@@ -3,7 +3,10 @@
 bool is_hr(char *text, int lineLen, char *style);
 bool is_list(char *text, int lineLen, char *style);
 bool codeBlog(char *text, int lineLen, char *style);
-bool header(char *text, int lineLen, char *style);
+bool yaml(char* text, int lineLen, char* style);
+bool header(char *text, int lineLen, char *style, bool isCurrentLine);
+bool horizontal(char *text, int lineLen, char *style, bool isCurrentLine);
+int taskList(char *text, int lineLen, char *style, bool isCurrentLine);
 bool quote(char *text, int lineLen, char *style);
 int inline_code(char *text, int remainingLen, char *style);
 int image(char *text, int remainingLen, char *style);

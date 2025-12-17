@@ -34,7 +34,7 @@ void init_ui(int argc, char** argv) {
     // Butonun yazı rengini manuel düzeltmek gerekebilir
     btnOpen->labelcolor(fl_rgb_color(184, 184, 184)); 
 
-    app.tree = new Fl_Tree(10, 30, 500, 600);
+    app.tree = new Fl_Tree(10, 30, 200, 600);
     
     // >> AĞAÇ RENK AYARLARI (Burada Yapılmalı) <<
     app.tree->box(FL_FLAT_BOX);
@@ -55,7 +55,7 @@ void init_ui(int argc, char** argv) {
     app.textBuf = new Fl_Text_Buffer();
     app.styleBuf = new Fl_Text_Buffer();
 
-    app.editor = new SmartEditor(520, 10, 770, 580);
+    app.editor = new SmartEditor(320, 10, 770, 580);
     // FL_BORDER_BOX: İnce siyah çizgili, içi boyanabilir kutu.
     app.editor->box(FL_BORDER_BOX);
     // >> EDİTÖR RENK AYARLARI (Kritik Bölüm) <<

@@ -3,7 +3,7 @@
 #include "FileSystem.hpp"
 #include "Parser.hpp"
 
-// Klasör Seç Butonu
+
 void SelectFolderBtnCB(Fl_Widget*, void*) {
     const char* dir = fl_dir_chooser("Çalışma Klasörünü Seç", app.currentRoot.c_str(), 0);
     if (dir) {
@@ -12,8 +12,7 @@ void SelectFolderBtnCB(Fl_Widget*, void*) {
         
         // Pencere başlığını güncelle
         if (app.tree->window()) {
-            std::string title = "Güvenli IDE - " + app.currentRoot;
-            app.tree->window()->copy_label(title.c_str());
+            app.tree->window()->copy_label(app.currentRoot.c_str());
         }
     }
 }
@@ -55,7 +54,6 @@ void EditorStyleUpdateCB(int pos, int nInserted, int nDeleted, int nRestyled, co
 }
 
 void ResetEditorStyles() {
-    // Callback'i geçici durdur (sonsuz döngü olmasın)
     app.textBuf->remove_modify_callback(EditorStyleUpdateCB, nullptr);
     
     int len = app.textBuf->length();
@@ -69,7 +67,6 @@ void ResetEditorStyles() {
         delete[] dummy;
     }
     
-    // Callback'i geri aç
     app.textBuf->add_modify_callback(EditorStyleUpdateCB, nullptr);
 }
 

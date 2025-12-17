@@ -38,6 +38,7 @@ set(PROJECT_SRC
     src/main.cpp
     src/Ui.cpp
     src/Parser.cpp
+    src/Utf8.cpp
 
   
 )

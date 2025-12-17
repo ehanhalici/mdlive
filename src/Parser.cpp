@@ -21,16 +21,6 @@ void ParseRange(int startPos, int endPos) {
     int cursorPos = app.editor->insert_position();
 
     int i = 0;
-    bool inCodeFence = false;
-
-    // --- YAML FRONTMATTER STATE ---
-    // Dosyanın EN BAŞINDAN başlıyorsak YAML kontrolü yap
-    bool inYaml = false;
-    if (startPos == 0 && length >= 3 && startsWith(textPart, length, "---")) {
-        inYaml = true; // YAML bloğuna girdik
-    }
-
-
     while (i < length) {
         // Satır Sınırlarını Bul
         int lineStart = i;
@@ -46,103 +36,22 @@ void ParseRange(int startPos, int endPos) {
         int absLineEnd = startPos + lineEnd;
         bool isCurrentLine = (cursorPos >= absLineStart && cursorPos <= absLineEnd);
 
-
-        // ----------------------------------------------------
-        // 1. YAML FRONTMATTER LOGIC (En Yüksek Öncelik)
-        // ----------------------------------------------------
-        if (inYaml) {
-            // Tüm satırı YAML rengine ('P') boya
-            memset(lineStyle, 'P', lineLen);
-            
-            // Eğer bu satır '---' ise ve ilk satır değilse, YAML bitmiştir.
-            // (lineStart > 0 kontrolü önemli, yoksa açılışta kapatırız)
-            if (lineStart > 0 && lineLen >= 3 && startsWith(lineText, lineLen, "---")) {
-                inYaml = false; 
-            }
-            i = lineEnd + 1;
-            continue; // YAML içindeyken başka kurala bakma
-        }
         
-        // --- BLOK KONTROLLERİ ---
+        if (yaml(lineText, lineLen, lineStyle)){i = lineEnd + 1; continue;}
+        if (codeBlog(lineText, lineLen, lineStyle)){i = lineEnd + 1; continue;}
+        if (header(lineText, lineLen, lineStyle, isCurrentLine)){i = lineEnd + 1; continue;}
+        if (horizontal(lineText, lineLen, lineStyle, isCurrentLine)){i = lineEnd + 1; continue;}
 
-        // A. Fenced Code Block (```)
-        if (lineLen >= 3 && startsWith(lineText, lineLen, "```")) {
-            inCodeFence = !inCodeFence;
-            memset(lineStyle, 'H', lineLen); 
-            i = lineEnd + 1;
-            continue;
-        }
-        if (inCodeFence) {
-            memset(lineStyle, 'C', lineLen); 
-            i = lineEnd + 1;
-            continue;
-        }
-
-        // B. Headers (#)
-        if (lineLen > 0 && lineText[0] == '#') {
-            int hCount = 0;
-            while (hCount < lineLen && lineText[hCount] == '#') hCount++;
-            
-            if (hCount < lineLen && lineText[hCount] == ' ') {
-                if (isCurrentLine) {
-                    memset(lineStyle, 'H', hCount);
-                    memset(lineStyle + hCount, 'B', lineLen - hCount);
-                } else {
-                    memset(lineStyle, 'G', hCount);
-                    memset(lineStyle + hCount, 'B', lineLen - hCount);
-                }
-                i = lineEnd + 1;
-                continue;
-            }
-        }
-
-        // C. Horizontal Rule (--- veya ***)
-        if (lineLen >= 3) {
-            bool isHR = true;
-            char c = lineText[0];
-            if (c == '-' || c == '*') {
-                for(int z=0; z<lineLen; z++) if(lineText[z] != c && lineText[z] != ' ') isHR = false;
-                if (isHR) {
-                    if (isCurrentLine) memset(lineStyle, 'H', lineLen);
-                    else memset(lineStyle, 'G', lineLen); 
-                    i = lineEnd + 1;
-                    continue;
-                }
-            }
-        }
-
-        // D. Task List (- [ ] veya - [x])
-        int tOffset = 0;
-        while(tOffset < lineLen && lineText[tOffset] == ' ') tOffset++;
-        
         bool isTask = false;
-        if (lineLen - tOffset >= 5 && 
-           (lineText[tOffset] == '-' || lineText[tOffset] == '*') && 
-            lineText[tOffset+1] == ' ' && lineText[tOffset+2] == '[') {
-            
-            if (lineText[tOffset+4] == ']') {
-                isTask = true; // Task olduğunu işaretle
-                char checkChar = lineText[tOffset+3];
-                int afterBracket = tOffset + 5;
-                bool isChecked = (checkChar == 'x' || checkChar == 'X');
-
-                if (isCurrentLine) {
-                    memset(lineStyle, 'H', afterBracket);
-                    if (isChecked) lineStyle[tOffset+3] = 'X'; 
-                } else {
-                    memset(lineStyle, 'G', tOffset + 2); 
-                    if (isChecked) {
-                        memset(lineStyle + tOffset + 2, 'X', 3); 
-                        memset(lineStyle + afterBracket, 'Z', lineLen - afterBracket); 
-                    } else {
-                        memset(lineStyle + tOffset + 2, 'L', 3); 
-                    }
-                }
-                // Task list'in metin kısmını (inline) parse etmek için continue DEMİYORUZ.
-                // Sadece başını işledik.
-            }
+        int tOffset = taskList(lineText, lineLen, lineStyle, isCurrentLine);
+        if (tOffset > 0)
+        {
+            isTask = true;
         }
+        // Task list'in metin kısmını (inline) parse etmek için continue DEMİYORUZ.
+        // Sadece başını işledik.
 
+        
         // E. ORG-MODE TABLE (| ... |)
         // Regex yerine basit mantık: Satır | ile başlıyorsa (trimlenmiş)
         // yukaridaki offset ile birlesebilir ama burasi ayri fonksiyon olacak simdilk kalsin
